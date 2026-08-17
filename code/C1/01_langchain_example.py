@@ -3,6 +3,7 @@ import os
 # os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 from dotenv import load_dotenv
 from langchain_community.document_loaders import UnstructuredMarkdownLoader
+from langchain_core.output_parsers import StrOutputParser
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.vectorstores import InMemoryVectorStore
@@ -27,7 +28,7 @@ embeddings = HuggingFaceEmbeddings(
     model_kwargs={'device': 'cuda'},
     encode_kwargs={'normalize_embeddings': True}
 )
-  
+
 # 构建向量存储
 vectorstore = InMemoryVectorStore(embeddings)
 vectorstore.add_documents(chunks)
@@ -67,7 +68,8 @@ llm = ChatOpenAI(
 # 用户查询
 question = "文中举了哪些例子？"
 
-# 在向量存储中查询相关文档
+# 在向量存储中查询+
+# 相关文档
 retrieved_docs = vectorstore.similarity_search(question, k=3)
 docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
 
@@ -76,5 +78,12 @@ print(answer)
 
 print()
 
-pure_answer = answer.content
-print(pure_answer)
+pure_answer1 = answer.content
+print(pure_answer1)
+
+chain = prompt | llm | StrOutputParser()
+
+print()
+
+pure_answer2 = chain.invoke({"question": question, "context": docs_content})
+print(pure_answer2)
